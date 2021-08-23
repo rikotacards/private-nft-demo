@@ -1,20 +1,22 @@
 # Agenda
 - What is Daml
-- Who uses Daml
+   - Daml templates
+   - Choices
+   - Propose Accept Pattern
 - Learning resources
     - Daml Docs [link](www.docs.daml.com)
     - Community Forum [link](discuss.daml.com)
     - Video Courses [link](https://daml.talentlms.com/catalog/info/id:132)
 
-What we don't go into details: 
-- Additional anologies of Daml to other programming langauges
-- Contract Visualization tool [here](https://docs.daml.com/tools/visual.html)
-- Daml functions
+- What we don't go into details here
+   - Frontend code for UI
+   - Details on Daml functions
+   - Detailed comparisons on permissioned / permissionless networks
 
 # Download SDK [Here](https://docs.daml.com/getting-started/installation.html)
 
 
-## Key Concepts
+## Key Features
 <i>Content taken from Episode 2.1</i>
 
 End goal is to create NFT platform with key features:
@@ -30,71 +32,62 @@ End goal is to create NFT platform with key features:
 <b>Templates</b> are a core concept in Daml. The below is an example of a `Token` template in it's intermediate state (not the final complete version of the token offer template we want to create)
 
 ### Templates define the behavior 
-- who can see what
-- Who can alter the ledger
-- How can they alter the ledger
-- under what conditions? 
+- Who can see what.
+- Who can alter the ledger.
+- How can they alter the ledger.
+- Under what conditions can information be altered.
 
 The below is 1 of 9 templates used in the NFT demo in the nft directory
 
 ## Breaking down a `template`
 
 ```
-template TokenOffer
+template Token 
   with
     issuer: Party
     owner: Party
     description: Text
     userAdmin: Party
-    issued: Time
-    newOnwer: Party
-    price: Decimal
     lastPrice: Decimal
     currency: Text
-    royaltyRate: Decimal
   where
-    signatory issuer, userAdmin, owner
-    observer newOwner
+    signatory 
+      issuer, 
+      userAdmin
 
-    ensure royaltyRate >= 0.0 && lastPrice >=0.0
-
-    key(issuer,owner,description): (Party, Party, next)
-    maintainer key._2
-
-    controller newOwner, userAdmin can
-      AcceptToken: ContractId Token
-        with 
-          owner = newOwner
-          lastPrice = price
-        ..
+    controller owner can
+      Offer: (ContractId TokenOffer)
+        with
+          newOwner: Party
+          price: Decimal
+        do 
+          create TokenOffer with .. 
 ```
 
 <b>templates</b> must contain
-- data fields in the <b>with</b> block
-- must container at least one <b> party</b>
-- at least one <b>signatory</b>
-`template` is a reserved word used to initalize a new template type, followed by the template name. In this case it is TokenOffer
+- Data fields in the <b>with</b> block
+- Must contain at least one <b> party</b>
+- At least one <b>signatory</b>
+- `template` is a reserved word used to initalize a new template type, followed by the template name. In this case it is TokenOffer
 
 ## Signatory
 Reserved keyword `signatory`
 
-It is a participant in a contract which consented in the creation of that template. In the above case, in order for the above contract to be created, we need the permission of the <b>issuer</b>, <b>owner</b>, <b>userAdmin</b>
+- It is a participant in a contract which <b>consented</b> in the creation of that template. 
 
-The issuer must have consented to the minting of thetoken
+- In the above case, in order for the above contract to be created, we need the permission of the <b>issuer</b>, <b>userAdmin</b>
+
+- The issuer must have consented to the minting of the token
 the admin makes sure that all parties that are acting have been KYCed 
-Owner is attesting that they are the ones offering to the new owner
 
-Signatory is someone that must have consented in the past. 
+- Signatory is someone that must have consented in the past. 
 
-In the past must have given their consent to this creation. 
+- In the past must have given their consent to this creation. 
 
 ## Observer
 Reserved keyword `observer`
 
 This is a way to make other parties aware of the contract. New owners must be able to see the contract. In this case the observer keyword is redundant because `newOwner` is used in signatory. But the main point is oberserver is an addtional party, they just get to see it. 
-
-## Ensure block
-this is a boolean expression, spells out some of the requirements. If one of the data fields gets violated, the contract will not be created. 
 
 ## Key
 
@@ -126,7 +119,7 @@ in this case, we simply create a new token, `create token`,
 By default, a contract will archive, or be removed from the active state of the ledger, or you can use the keyword `nonconsuming` to prevent that. 
 
 
-# Anologies to `templates`
+# Analogies to `templates`
 ## sql
 you can think of `templates` as tables in a sql database
 
@@ -176,20 +169,32 @@ you can think of `templates` as tables in a sql database
 # Workflow Summary
 <i>Diagram coming soon</i>
 
+Because this is a closed system, there is a `userAdmin` that grants users rights to exercise choices. 
+
+The choices are assocated with the user roles.
+
 `Token` contract can only be created by an `Issuer`
 
-`Issuer` is only granted rights by the userAdmin upon recieving an `IssuerRequest`
+Not anyone is an issuer. A user signs on, and requests to be an issuer (Artist, or owner/purchaser)
+
+`Issuer` contract is only generated from an `IssuerRequest`
 
 A user (Party) will submit an `IssuerRequest` (This step is the explicity onboarding, we are explicty giving this party the role of an issuer)
 
 User Party submits `IssuerRequest`
 User Admin <i>GrantsIssuerRights</i>, which results in the creation of `Issuer` contract. From here, `Issuer` can create `Token`
 
-`IssuerRequest` --> `Issuer` --> `Token`
+Party (not contract) `-->` `IssuerRequest` --> `Issuer` --> `Token`
 
-# Project Set up
+1. Party creates request to be owner / issuer
+2. User admin grants role contract
+3. User (as Issuer) can mint token
+4. Issuer can offer token to owner / purchaser, results in an offerRequest
+5. Owner can reject / accept this request
 
-in the console, create new directory:
+# Project Directory Set up
+
+In the console, create new directory:
 
 1. `mkdir private-nft`
 
@@ -224,7 +229,7 @@ Take a second and think, what are the rights and obligations of the final object
 
 So we can create the final object first. 
 Templates define the behavior, datamodel and rights and obligations
-Starting with the data model, which is after teh `which` statement. 
+Starting with the data model, which is after teh `with` statement. 
 - what is the data associated with the token? 
 - If we are thinking in sequel table, what are the columns that this must contain. 
 
@@ -234,7 +239,7 @@ Starting with the data model, which is after teh `which` statement.
 After filling out the data types, data fields after the `with` block. we need to think what are the rights & obligations surrounding this token. unlike publicly issued NFT, I want someone resopnsible for this token. I want the issuer to be on the hook to honoring the NFT. to do that, we designate a signatory. 
 The NFTs work like autographs, we want to prove that some point, the issuer has signed off on it (to prove provenance) 
 
-## important
+## Important
 However, there is a concept in daml, where you can never be an obligable party on a contract, without your knowing and informed consent. 
 
 This means, if I designate the issuer as the signatory, thismeans the only way that the token can exist is if the issuer signed off on it. This makes sure that the tokens that you ahve are signd off by the people that. 
@@ -301,6 +306,12 @@ template Token
 
 After the above, you will see errors from `tokenOffer` that's because we haven't created the `TokenOffer` template. We'll do that next.
 
+Daml is polite, we cannot say 
+
+"Here, take my money", (which means direct transfer of ownership)
+
+We say "Would you like to take my money?", === Propose accept pattern
+
 # Create `TokenOffer` template
 In the same file, `Token.daml`, underneath the token template, create the `TokenOffer` template 
 
@@ -337,7 +348,7 @@ template TokenOffer
     -- Maintainer is somebody who is responsible for making sure that the key is unqiue 
     -- it needs to be one of the parties that are in the key
     -- the best one is the current owner of the offer, since they own the offer
-    maintainer: key._2
+    maintainer key._2
 
     -- newOwner can exercise the choice called Accept token 
     -- this generates a new contract with type Token
@@ -380,18 +391,30 @@ setup = script do
   return ()
 ```
 
-If you commented out `userAdmin` then bob can create the token contract.
+Try to commented out `userAdmin` then bob can create the token contract. See the script results.
 
 # Review
-We created `Token` template and `TokenOffer` template. But with the current set up, an issuer cannot create a token without a `useAdmin` approval. 
+We created 
+- `Token` template 
+- `TokenOffer` template. 
+
+## Problem:
+But with the current set up, bob cannot create a token without a `useAdmin` approval. 
+
+We need to create another template that captures the userAdmin approval. This is done through giving the parties user role contracts. 
+
+
+
+For example bob, at the moment is a party with no additional rights, such as the right to mint a token. 
 
 If we use the script above, there will be an error due to `userAdmin` being in the signatory. Try to comment out `userAdmin` from the `Token` template. 
 
 # 2. Create UserAdmin Template
 1. In the `daml` directory, create `UserAdmin.daml` to allow user admin to administer users. 
 
-There will be `owners` and `issuers`
-`issuesr` are the content creators
+There will be 
+- `owners` template 
+- `issuers` template, content creators
 
 We should create templates that correspond to the different types of user that are undersigned by the userAdmin
 In this case, this entitlement is granted by the `userAdmin` to allow issures to mint NFTs
@@ -452,17 +475,15 @@ template IssuerRequest
   where
     signatory
       issuer
-  controller userAdmin can 
-    GrantIssuerRights: ContractId Issuer
-      do
-        create Issuer
-          with
-            ..
-    RejectIssuerRequest: ()
-      do 
-        return ()
-
-
+    controller userAdmin can 
+      GrantIssuerRights: ContractId Issuer
+        do
+          create Issuer
+            with
+              ..
+      RejectIssuerRequest: ()
+        do 
+          return ()
 ```
 
 
@@ -520,9 +541,6 @@ template Owner
 # Owner Request Template
 ```
 -- in UserAdmin.daml
-module UserAdmin where
-import TokenOffer
-
 template OwnerRequest
   with
     userAdmin: Party
@@ -603,45 +621,20 @@ Here, the user admin creates the `Issuer` contract on behalf of alice.
 ```
 Now that the `aliceIssuer` contract is created, add the following script. 
 
-We assign the created Token contract created resulting from exercising the `MintToken` choice into the variable `originalToken`
+## Test steps
+Step 2, alice exercises `MintToken`
+remember to add 'nonconsuming' to the front of  'MinToken' choice in
+UserAdmin.daml, in the Issuer Template 
 ```
-  -- alice will then exercise the choice 'MintToken'
-  -- remember to add 'nonconsuming' to the front of  'MinToken' choice in 
-  -- UserAdmin.daml, in the Issuer Template
-  originalToken <- submit alice do
-    exerciseCmd aliceIssuer MintToken
-      with
-        description = "cat pic 1"
-        initialPrice = 100.00
-        currency = "HKD"
+   originalToken <- submit alice do
+     exerciseCmd aliceIssuer MintToken
+       with
+         description = "cat pic 1"
+         initialPrice = 100.00
+         currency = "HKD"
 ```
 
-At this point if you click on Script results, you will see two tables. One for Token, one for Issuer. 
-
-Now lets offer `originalToken` to bob for 200.
-```
-  bobOffer <- submit alice do
-    exerciseCmd originalToken Offer
-      with  
-        newOwner = bob
-        price = 200.00
-```
-Now lets see the scenario result
-
-you'll see `TokenOffer` contract, and `Issuer` contract, 
-
-What can bob do with the Token Offer? check the `TokenOffer` template in `Token.daml`. Bob can exercise the choice `AcceptToken`. But there will be an error, this is because we did not onboard bob yet. Try with the erronous script (Remember to delete)
-
-```
-  submit bob do 
-    -- this will result in an error
-    -- we have not onboarded Bob yet
-    exerciseCmd bobOffer AcceptToken
-```
-Remove the above, Bob needs to be explicitly onboarded as an owner.
-
-Add the below script
-
+Step 3, Bob requests to become an owner
 ```
   bobRequest <- submit bob do
     createCmd OwnerRequest
@@ -650,27 +643,34 @@ Add the below script
         owner = bob
         reason = "I've got connections"
 ```
+Step 4, UserAdmin grants owner rights
 
-Now, userAdmin needs to Grant owner rights to bob, add the script below
 ```
   bobOwner <- submit userAdmin do 
     exerciseCmd bobRequest GrantOwnerRights
 ```
-Now we have created the `bobOwner` contract which bob can exercise choices that the contract contains. To see that, add the following script: 
-
+Step 5, alice offers token to bob with new price
+```
+  bobOffer <- submit alice do
+    exerciseCmd originalToken Offer
+      with  
+        newOwner = bob
+        price = 200.00
+```
+Step 6, bob accepts offer as new owner
 ```
   submit bob do
     exerciseCmd bobOwner AcceptTokenAsNewOwner
       with
         offerId = bobOffer
 ```
-The `TokenOffer` contract will have archived, and a new `Token` contract created, now with the owner as `Bob`
-
-Try to comment out the last script we pasted, and you'll see the `TokenOffer` again. 
-
 So this tests out the transfer of ownership of the NFTs. 
 
 # End of Part 1 
+
+### Explore creating frontend using React & Typescript
+- Your first feature [link](https://docs.daml.com/getting-started/first-feature.html)
+- Getting Started [link](https://docs.daml.com/getting-started/index.html)
 
 
 # Part 2 - Payment template [ TODO ]
