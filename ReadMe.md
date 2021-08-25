@@ -1,5 +1,5 @@
 # Agenda
-- What is Daml
+- What is Daml ([docs](https://docs.daml.com/#))
    - Daml templates
    - Choices
    - Propose Accept Pattern
@@ -8,7 +8,7 @@
     - Community Forum [link](discuss.daml.com)
     - Video Courses [link](https://daml.talentlms.com/catalog/info/id:132)
 
-- What we don't go into details here
+- <i>What we don't go into details in this walkthrough</I>
    - Frontend code for UI
    - Details on Daml functions
    - Detailed comparisons on permissioned / permissionless networks
@@ -19,17 +19,25 @@
 ## Key Features
 <i>Content taken from Episode 2.1</i>
 
-End goal is to create NFT platform with key features:
+End goal is to create the smart contracts that will be the core of the NFT platform.
 
-1. Content creators can mint NFTs
-2. Owners can sell or transfer their NFTs
-3. in the process ,they must pay royalty to creator 
-4. participants must be explicitly permitted 
+
+
+1. Participants must be explicitly permitted 
     - userAdmin.daml
     - Issuer template, owner template, issuerRequest, ownerRequest
+2. Content creators can mint NFTs
+3. Owners can sell or transfer their NFTs
+
+<b>Daml scripts can test your business logic</b> see `MainFinal.daml`
+
 ---
 ## Daml Basics
-<b>Templates</b> are a core concept in Daml. The below is an example of a `Token` template in it's intermediate state (not the final complete version of the token offer template we want to create)
+
+Daml is an open source smart contract language. You can write the smart contracts once, and then choose to deploy them on various blockchain infrastructures or centralised databases.
+
+<b>Templates</b> are a core concept in Daml. 
+
 
 ### Templates define the behavior 
 - Who can see what.
@@ -41,17 +49,19 @@ The below is 1 of 9 templates used in the NFT demo in the nft directory
 
 ## Breaking down a `template`
 
-```
+The below is an example of a `Token` template 
+
+```haskell
 template Token 
   with
-    issuer: Party
-    owner: Party
-    description: Text
-    userAdmin: Party
-    lastPrice: Decimal
-    currency: Text
+    issuer: Party -- artist
+    owner: Party -- you
+    description: Text -- Catpic.jpg
+    userAdmin: Party -- Platform owner
+    lastPrice: Decimal -- 100.00
+    currency: Text -- HKD
   where
-    signatory 
+    signatory -- Consented in contract creation
       issuer, 
       userAdmin
 
@@ -73,6 +83,13 @@ template Token
 ## Signatory
 Reserved keyword `signatory`
 
+```haskell
+  where
+    signatory 
+      issuer, 
+      userAdmin
+```
+
 - It is a participant in a contract which <b>consented</b> in the creation of that template. 
 
 - In the above case, in order for the above contract to be created, we need the permission of the <b>issuer</b>, <b>userAdmin</b>
@@ -87,28 +104,32 @@ the admin makes sure that all parties that are acting have been KYCed
 ## Observer
 Reserved keyword `observer`
 
-This is a way to make other parties aware of the contract. New owners must be able to see the contract. In this case the observer keyword is redundant because `newOwner` is used in signatory. But the main point is oberserver is an addtional party, they just get to see it. 
+This is a way to make other parties aware of the contract. New owners must be able to see the contract. 
 
-## Key
+<i>See passport example</i>
 
-specifies that this triple, in the example above, `(issuer,owner, description)` must uniquely idenifty a token offer, these are 3 fields that will lead to a unique `tokenOffer`
-it is a guarantee of uniqueness. And we have the d
-
-## Maintainer
-must refer to the key to figure out which party is responsible for maintaining the key. Or which party is responsible for ensureing the uniqueness 
+In this case the observer keyword is redundant because `newOwner` is used in signatory. But the main point is oberserver is an addtional party, they just get to see it. 
 
 ## Choices 
 `AcceptToken`, they are important, they spell out how the ledger can be mutated. 
 - who can do this? 
+
+```haskell
+    controller owner can
+      Offer: (ContractId TokenOffer)
+        with
+          newOwner: Party
+          price: Decimal
+        do 
+          create TokenOffer with .. 
+```
 
 Most of the interesting stuff happens in the body of the choice. 
 
 Most of the ledger updates will be udpated through choices. A result of exercising a choice
 
 All choices must indicate who can exercise them. Who can actually execute the body of a choice
-
-In our case, we specified 2. This means that both parties need to sign off on having the choice being exercised. 
-New owner and useradmin togegher are able to exercise this choice, and no other party are ableto excercise this chioce. 
+ 
 
 And then the name of the choice
 `acceptToken`, followed by the return type
@@ -118,24 +139,32 @@ Lastly, we have the body of the choice. Here is where we spell out waht happens,
 in this case, we simply create a new token, `create token`, 
 By default, a contract will archive, or be removed from the active state of the ledger, or you can use the keyword `nonconsuming` to prevent that. 
 
+--- 
 
-# Analogies to `templates`
-## sql
-you can think of `templates` as tables in a sql database
+## Key
+
+specifies that this triple, in the example above, `(issuer,owner, description)` must uniquely idenifty a token offer, these are 3 fields that will lead to a unique `tokenOffer`
+it is a guarantee of uniqueness. And we have the d
+## Maintainer
+must refer to the key to figure out which party is responsible for maintaining the key. Or which party is responsible for ensureing the uniqueness 
 
 ---
+
+## Analogies to `templates`
+you can think of `templates` as tables in a sql database
+
+
 | id | issuer | owner | description |
 |--- | --- | --- | --- |
 |0|Max|Bob|Novel text|
 |1|Alice | Eve| another text| 
 
----
 
-- template -> table
+- template --> table
 
-- data fields -> columns
+- data fields --> columns
 
-- active ledger state -> all the tables in a schema
+- active ledger state --> all the tables in a schema
 
 - choices -> stored procedures. It's atomic in the sense that if anything fails, the database gets rolled back. 
 
@@ -145,24 +174,23 @@ you can think of `templates` as tables in a sql database
 
 - Signatory, observer, controller, row level permissions
 
-
-
 # Daml Hands-on (From E 2.2)
 
 ## Key features of Private NFT
-1. Content creators can mint NFTs
-2. Owners can sell their NFTs
-3. But in the process, they must pay royalty to creator
-4. Participants must be explicitly permitted (this is different than public NFTs) 
+1. Participants must be explicitly permitted 
+    - userAdmin.daml
+    - Issuer template, owner template, issuerRequest, ownerRequest
+2. Content creators can mint NFTs
+3. Owners can sell or transfer their NFTs
 
 ## Templates to code
 ### Part 1
-1. `owner`
-2. `ownerRequest`
-3. `issuer`
-4. `issuerRequest`
-5. `Token`
-6. `TokenOffer`
+1. `Token`
+2. `TokenOffer`
+3. `Issuer`
+4. `IssuerRequest`
+5. `Owner`
+6. `OwnerRequest`
 ### Part 2
 7. `Payment`
 
@@ -219,8 +247,6 @@ Here you can see in `daml > Main.daml`, line 24, click "script Result" and you'l
 # 1. Create `Token.daml`
 1. in the `daml` directory, create new file named `Token.daml`
 
-at the top, line 1: 
-`module Token where`
 
 Recall feature: 
 - Content creators can mint NFTs
@@ -263,7 +289,7 @@ In the do block, we create a token offer with the current variables in the scope
 Now we model the rights and behaviors. 
 someone has the right to do something if they can mutate the state of the ledger. 
 
-```
+```haskell
 module Token where
 
 -- Used for testing
@@ -326,7 +352,7 @@ It's going to have the same data fields as `Token`, along with
 The `acceptToken` choice requires the owner and the `userAdmin` sign off. However it is unlikely that the `owner` and the `userAdmin` are coming from one endpoint. 
 What we can do is setup a rights contract, that allows a permitte issuer that allows to act on behalf as user admin and himself
 
-```
+```haskell
 template TokenOffer
   with
     issuer: Party
@@ -372,7 +398,7 @@ Add the testing scripts, you wouldn't be able to create a token contract right o
 
 But lets take a look at the testing scripts
 
-```
+```haskell
 setup : Script ()
 setup = script do
   alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
@@ -419,7 +445,7 @@ There will be
 We should create templates that correspond to the different types of user that are undersigned by the userAdmin
 In this case, this entitlement is granted by the `userAdmin` to allow issures to mint NFTs
 
-```
+```haskell
 -- in UserAdmin.daml file
 module UserAdmin where
 import Token
@@ -466,7 +492,7 @@ template Issuer
 ```
 We'll add one more template. We want a random new issuer to be able to ask for a token. ASk for an issuer contract
 
-```
+```haskell
 template IssuerRequest
   with
     userAdmin: Party
@@ -496,7 +522,7 @@ once they are granted by the userAdmin, the issuer or owner status,
 owners can accept token offers
 content creators can mint
 
-```
+```haskell
 -- in UserAdmin.daml
 
 template Owner
@@ -539,7 +565,7 @@ template Owner
         
 ```
 # Owner Request Template
-```
+```haskell
 -- in UserAdmin.daml
 template OwnerRequest
   with
@@ -595,7 +621,7 @@ Below is an erronous script that creates a `Token` contract without the `userAdm
 
 The error will say it is missing authorization from userAdmin
 
-```
+```haskell
   submit alice do 
     createCmd Token
       with
@@ -625,7 +651,7 @@ Now that the `aliceIssuer` contract is created, add the following script.
 Step 2, alice exercises `MintToken`
 remember to add 'nonconsuming' to the front of  'MinToken' choice in
 UserAdmin.daml, in the Issuer Template 
-```
+```haskell
    originalToken <- submit alice do
      exerciseCmd aliceIssuer MintToken
        with
@@ -635,7 +661,7 @@ UserAdmin.daml, in the Issuer Template
 ```
 
 Step 3, Bob requests to become an owner
-```
+```haskell
   bobRequest <- submit bob do
     createCmd OwnerRequest
       with
@@ -645,12 +671,12 @@ Step 3, Bob requests to become an owner
 ```
 Step 4, UserAdmin grants owner rights
 
-```
+```haskell
   bobOwner <- submit userAdmin do 
     exerciseCmd bobRequest GrantOwnerRights
 ```
 Step 5, alice offers token to bob with new price
-```
+```haskell
   bobOffer <- submit alice do
     exerciseCmd originalToken Offer
       with  
@@ -658,7 +684,7 @@ Step 5, alice offers token to bob with new price
         price = 200.00
 ```
 Step 6, bob accepts offer as new owner
-```
+```haskell
   submit bob do
     exerciseCmd bobOwner AcceptTokenAsNewOwner
       with
