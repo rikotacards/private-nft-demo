@@ -1,3 +1,5 @@
+### Meetup Registration [here](https://www.meetup.com/xccelerate/events/279752195)
+
 # Agenda
 - What is Daml ([docs](https://docs.daml.com/#))
    - Daml templates
