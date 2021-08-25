@@ -29,6 +29,12 @@ End goal is to create the smart contracts that will be the core of the NFT platf
 2. Content creators can mint NFTs
 3. Owners can sell or transfer their NFTs
 
+What do Smart contracts do? 
+- Smart contracts reprsent who owns what digital good
+
+- Smart contracts define who can change ownership
+- Essentially how are the records being added
+
 <b>Daml scripts can test your business logic</b> see `MainFinal.daml`
 
 ---
@@ -36,16 +42,17 @@ End goal is to create the smart contracts that will be the core of the NFT platf
 
 Daml is an open source smart contract language. You can write the smart contracts once, and then choose to deploy them on various blockchain infrastructures or centralised databases.
 
-<b>Templates</b> are a core concept in Daml. 
+## Templates
+<b>Templates</b> are a core concept in Daml.
 
 
-### Templates define the behavior 
+
+### Defines the behavior 
 - Who can see what.
 - Who can alter the ledger.
 - How can they alter the ledger.
 - Under what conditions can information be altered.
 
-The below is 1 of 9 templates used in the NFT demo in the nft directory
 
 ## Breaking down a `template`
 
@@ -126,13 +133,13 @@ In this case the observer keyword is redundant because `newOwner` is used in sig
 
 Most of the interesting stuff happens in the body of the choice. 
 
-Most of the ledger updates will be udpated through choices. A result of exercising a choice
+Most of the ledger updates will be udpated through choices. A result of exercising a choice.
 
 All choices must indicate who can exercise them. Who can actually execute the body of a choice
  
 
 And then the name of the choice
-`acceptToken`, followed by the return type
+`Offer`, followed by the return type
 
 Lastly, we have the body of the choice. Here is where we spell out waht happens, and how we want to mutate the ledger, or the workflow
 
